@@ -69,7 +69,7 @@ def _call_gemini(prompt: str, current_time_str: str, timezone: str) -> str:
     if not api_key:
         raise ValueError("GEMINI_API_KEY no está configurada en las variables de entorno.")
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
     system_instruction = SYSTEM_PROMPT_TEMPLATE.format(
         current_time=current_time_str,
         timezone=timezone
@@ -90,10 +90,23 @@ def _call_gemini(prompt: str, current_time_str: str, timezone: str) -> str:
         }
     }
 
-    logger.debug("Llamando a la API de Gemini...")
-    response = requests.post(url, json=payload, timeout=15)
-    response.raise_for_status()
-    data = response.json()
+    models_to_try = [model, "gemini-3.5-flash-lite"] if model != "gemini-3.5-flash-lite" else [model]
+    last_err = None
+
+    for m in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+        logger.debug("Llamando a la API de Gemini con modelo '%s'...", m)
+        try:
+            response = requests.post(url, json=payload, timeout=15)
+            response.raise_for_status()
+            data = response.json()
+            break
+        except requests.RequestException as e:
+            logger.warning("Fallo en Gemini con modelo '%s': %s", m, e)
+            last_err = e
+    else:
+        raise last_err or RuntimeError("No se pudo obtener respuesta de ningún modelo de Gemini.")
+
 
     candidates = data.get("candidates", [])
     if not candidates:
