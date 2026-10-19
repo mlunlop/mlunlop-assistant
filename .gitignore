@@ -1,0 +1,33 @@
+# Entornos y variables secretas
+.env
+.env*.local
+*.env
+
+# Credenciales y tokens de Google
+credentials.json
+token.json
+client_secret*.json
+
+# Base de datos local
+assistant.db
+*.db
+*.sqlite3
+
+# Python y entornos virtuales
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
